@@ -1,9 +1,4 @@
-// main.js
-
 const writings = [
-  // -------------------------
-  // Insight Letters
-  // -------------------------
   {
     id: "essay-1",
     type: "letter",
@@ -54,10 +49,6 @@ const writings = [
     summary:
       "Trust is not built through messaging or morale campaigns. It emerges from reliability, fairness, repair, and predictable recourse.",
   },
-
-  // -------------------------
-  // Executive Briefs
-  // -------------------------
   {
     id: "brief-1",
     type: "brief",
@@ -68,10 +59,6 @@ const writings = [
     summary:
       "A board-level diagnostic on coordination risk, alignment drag, and early structural indicators that typically appear before financial symptoms.",
   },
-
-  // -------------------------
-  // Working Papers
-  // -------------------------
   {
     id: "wp-1",
     type: "working-paper",
@@ -151,36 +138,32 @@ const publications = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
+  setYear();
+  renderWritingShelves();
+  renderResearchShelf();
+  renderPublications();
+  loadWriting();
+  activateRevealAnimations();
+  activateScrollSpy();
+  activateSmoothSectionLinks();
+});
+
+function setYear() {
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
-
-  if (document.getElementById("essay-list")) {
-    renderWritingShelves();
-  }
-
-  if (document.getElementById("research-list")) {
-    renderResearchShelf();
-  }
-
-  if (document.getElementById("publication-list")) {
-    renderPublications();
-  }
-
-  if (document.getElementById("essay-content")) {
-    loadWriting();
-  }
-});
+}
 
 function renderWritingShelves() {
   const list = document.getElementById("essay-list");
   if (!list) return;
 
-  const letters = writings.filter((e) => e.type === "letter");
-  const briefs = writings.filter((e) => e.type === "brief");
+  const sorted = [...writings].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const letters = sorted.filter((item) => item.type === "letter");
+  const briefs = sorted.filter((item) => item.type === "brief");
 
   const lettersHtml = letters.length
     ? `
-      <div class="tier-block">
+      <div class="tier-block reveal">
         <h3 class="tier-title">Insight Letters</h3>
         <div class="tier-grid">
           ${letters.map(renderCard).join("")}
@@ -191,7 +174,7 @@ function renderWritingShelves() {
 
   const briefsHtml = briefs.length
     ? `
-      <div class="tier-block tier-briefs">
+      <div class="tier-block tier-briefs reveal">
         <h3 class="tier-title">Executive Briefs</h3>
         <div class="tier-grid">
           ${briefs.map(renderCard).join("")}
@@ -207,15 +190,18 @@ function renderResearchShelf() {
   const list = document.getElementById("research-list");
   if (!list) return;
 
-  const workingPapers = writings.filter((e) => e.type === "working-paper");
+  const workingPapers = [...writings]
+    .filter((item) => item.type === "working-paper")
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 
   if (!workingPapers.length) {
-    list.innerHTML = `<p class="section-subtitle">No working papers yet. This shelf is being built.</p>`;
+    list.innerHTML =
+      '<p class="section-subtitle">No working papers yet. This shelf is being built.</p>';
     return;
   }
 
   list.innerHTML = `
-    <div class="tier-block">
+    <div class="tier-block reveal">
       <h3 class="tier-title">Working Papers</h3>
       <div class="tier-grid">
         ${workingPapers.map(renderCard).join("")}
@@ -226,7 +212,7 @@ function renderResearchShelf() {
 
 function renderCard(item) {
   const tagsHtml = (item.tags || [])
-    .map((t) => `<span class="tag">${escapeHtml(String(t))}</span>`)
+    .map((tag) => `<span class="tag">${escapeHtml(String(tag))}</span>`)
     .join("");
 
   const classMap = {
@@ -258,18 +244,17 @@ function renderPublications() {
   if (!list) return;
 
   if (!publications.length) {
-    list.innerHTML = `<p class="section-subtitle">Publication list coming soon.</p>`;
+    list.innerHTML =
+      '<p class="section-subtitle">Publication list coming soon.</p>';
     return;
   }
 
   list.innerHTML = publications
     .map(
       (pub) => `
-      <article class="publication-item">
+      <article class="publication-item reveal">
         <p class="publication-category">${escapeHtml(pub.category)}</p>
-        <p class="publication-citation">
-          ${escapeHtml(pub.citation)}
-        </p>
+        <p class="publication-citation">${escapeHtml(pub.citation)}</p>
         ${
           pub.link
             ? `<p class="publication-link-wrap">
@@ -288,15 +273,15 @@ function renderPublications() {
 }
 
 function loadWriting() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-
+  const contentEl = document.getElementById("essay-content");
   const titleEl = document.getElementById("essay-title");
   const metaEl = document.getElementById("essay-meta");
-  const contentEl = document.getElementById("essay-content");
   const kickerEl = document.querySelector(".essay-kicker");
 
-  if (!titleEl || !metaEl || !contentEl) return;
+  if (!contentEl || !titleEl || !metaEl) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
 
   if (!id) {
     titleEl.textContent = "Piece not found";
@@ -306,7 +291,7 @@ function loadWriting() {
     return;
   }
 
-  const item = writings.find((e) => e.id === id);
+  const item = writings.find((entry) => entry.id === id);
 
   if (!item) {
     titleEl.textContent = "Piece not found";
@@ -328,9 +313,9 @@ function loadWriting() {
   }
 
   fetch(`${item.id}.html`)
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to load file");
-      return res.text();
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to load file");
+      return response.text();
     })
     .then((html) => {
       contentEl.innerHTML = html;
@@ -340,8 +325,88 @@ function loadWriting() {
     });
 }
 
+function activateRevealAnimations() {
+  const items = document.querySelectorAll(".reveal");
+  if (!items.length || !("IntersectionObserver" in window)) {
+    items.forEach((item) => item.classList.add("is-visible"));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        obs.unobserve(entry.target);
+      });
+    },
+    {
+      threshold: 0.12,
+      rootMargin: "0px 0px -40px 0px",
+    },
+  );
+
+  items.forEach((item) => observer.observe(item));
+}
+
+function activateScrollSpy() {
+  const navLinks = document.querySelectorAll('.nav-link[href^="#"]');
+  const sections = document.querySelectorAll(".section-anchor[id]");
+
+  if (
+    !navLinks.length ||
+    !sections.length ||
+    !("IntersectionObserver" in window)
+  ) {
+    return;
+  }
+
+  const linkMap = new Map();
+  navLinks.forEach((link) => {
+    const href = link.getAttribute("href");
+    if (href) linkMap.set(href.slice(1), link);
+  });
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const link = linkMap.get(entry.target.id);
+        if (!link) return;
+
+        if (entry.isIntersecting) {
+          navLinks.forEach((nav) => nav.classList.remove("is-active"));
+          link.classList.add("is-active");
+        }
+      });
+    },
+    {
+      threshold: 0.35,
+      rootMargin: "-20% 0px -55% 0px",
+    },
+  );
+
+  sections.forEach((section) => observer.observe(section));
+}
+
+function activateSmoothSectionLinks() {
+  const sectionLinks = document.querySelectorAll('a[href^="#"]');
+
+  sectionLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const href = link.getAttribute("href");
+      if (!href || href === "#") return;
+
+      const target = document.querySelector(href);
+      if (!target) return;
+
+      event.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
 function escapeHtml(str) {
-  return str
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
