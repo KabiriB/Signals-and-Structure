@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Beyond the Dashboard: Mapping Voice, Friction, and Public Response |
+      Kabiri Bule
+    </title>
+    <meta
+      name="description"
+      content="A resident-centred spatial intelligence prototype using GCRO Quality of Life data to show how governance pressure takes different forms across urban space in Gauteng."
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      .showcase-page {
+        --showcase-surface: #1c2025;
+        --showcase-surface-2: #232830;
+        --showcase-surface-3: rgba(255, 255, 255, 0.04);
+        --showcase-border: rgba(255, 255, 255, 0.1);
+        --showcase-text: #f2efe8;
+        --showcase-muted: #b8b1a5;
+        --showcase-muted-strong: #d6d0c5;
+        --showcase-accent-soft: rgba(201, 162, 39, 0.14);
+        --showcase-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+
+        padding: 3rem 0 4rem;
+      }
+
+      .showcase-hero,
+      .map-grid,
+      .response-grid,
+      .method-grid {
+        display: grid;
+        gap: 1.35rem;
+      }
+
+      .showcase-hero {
+        grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+        align-items: start;
+      }
+
+      .showcase-card,
+      .showcase-note,
+      .map-card,
+      .panel-card,
+      .response-card,
+      .method-card {
+        background: linear-gradient(
+          180deg,
+          rgba(33, 37, 43, 0.96),
+          rgba(25, 28, 33, 0.96)
+        );
+        border: 1px solid var(--showcase-border);
+        border-radius: 18px;
+        box-shadow: var(--showcase-shadow);
+        color: var(--showcase-text);
+      }
+
+      .showcase-card,
+      .showcase-note,
+      .map-card,
+      .panel-card,
+      .response-card,
+      .method-card {
+        padding: 1.3rem;
+      }
+
+      .showcase-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.9rem;
+        font-size: 0.9rem;
+        color: var(--showcase-muted);
+        text-decoration: none;
+      }
+
+      .showcase-breadcrumb:hover {
+        color: var(--showcase-text);
+      }
+
+      .showcase-kicker,
+      .section-kicker,
+      .panel-label,
+      .response-kicker,
+      .method-kicker,
+      .mini-label {
+        margin: 0 0 0.45rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.73rem;
+        color: var(--showcase-muted);
+      }
+
+      .showcase-title {
+        margin: 0;
+        font-size: clamp(2.55rem, 5.2vw, 4.7rem);
+        line-height: 0.98;
+        letter-spacing: -0.045em;
+        max-width: 10ch;
+        color: var(--showcase-text);
+      }
+
+      .accent-rule {
+        width: 76px;
+        height: 3px;
+        background: var(--accent);
+        border-radius: 999px;
+        margin: 1rem 0 1rem;
+      }
+
+      .showcase-lead,
+      .showcase-body,
+      .showcase-note p,
+      .section-intro,
+      .panel-text,
+      .method-text,
+      .map-note,
+      .status-text,
+      .legend-subtext,
+      .stat-label {
+        color: var(--showcase-muted-strong);
+      }
+
+      .showcase-lead {
+        font-size: 1.08rem;
+        max-width: 62ch;
+        margin: 0 0 1rem;
+      }
+
+      .showcase-body {
+        max-width: 64ch;
+        margin: 0 0 0.95rem;
+      }
+
+      .showcase-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1.25rem;
+      }
+
+      .showcase-note-block + .showcase-note-block,
+      .panel-block + .panel-block,
+      .method-block + .method-block {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .showcase-note h3,
+      .panel-title,
+      .response-title,
+      .method-title,
+      .map-title,
+      .section-title {
+        margin: 0 0 0.5rem;
+        color: var(--showcase-text);
+      }
+
+      .showcase-note h3 {
+        font-size: 0.98rem;
+      }
+
+      .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-top: 1.2rem;
+      }
+
+      .quick-stat {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 0.8rem 0.85rem;
+        background: var(--showcase-surface-3);
+      }
+
+      .stat-value {
+        display: block;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--showcase-text);
+        line-height: 1.2;
+      }
+
+      .stat-label {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.84rem;
+        line-height: 1.45;
+      }
+
+      .section-tight {
+        padding-top: 2.2rem;
+      }
+
+      .map-grid {
+        grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+        align-items: start;
+      }
+
+      .map-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-bottom: 0.95rem;
+      }
+
+      .map-pill {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--showcase-muted-strong);
+        border-radius: 999px;
+        padding: 0.5rem 0.85rem;
+        font-size: 0.9rem;
+        line-height: 1;
+        cursor: pointer;
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease,
+          color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .map-pill:hover {
+        color: var(--showcase-text);
+        transform: translateY(-1px);
+      }
+
+      .map-pill.is-active {
+        border-color: rgba(201, 162, 39, 0.7);
+        background: var(--showcase-accent-soft);
+        color: var(--showcase-text);
+      }
+
+      .map-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: start;
+        margin-bottom: 0.9rem;
+      }
+
+      .map-title {
+        font-size: 1.15rem;
+      }
+
+      .map-shell {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        overflow: hidden;
+        background: linear-gradient(180deg, #f3f0e8, #ece6db);
+      }
+
+      #voiceMap {
+        height: 620px;
+        width: 100%;
+        background: linear-gradient(180deg, #f6f3ec, #ede7db);
+      }
+
+      .map-foot {
+        display: grid;
+        gap: 0.85rem;
+        margin-top: 0.95rem;
+      }
+
+      .legend-box {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .legend-items,
+      .legend-scale {
+        display: grid;
+        gap: 0.45rem;
+        margin-top: 0.65rem;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-size: 0.86rem;
+        color: var(--showcase-muted-strong);
+      }
+
+      .legend-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        flex: 0 0 auto;
+      }
+
+      .legend-scale-row {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        gap: 0.55rem;
+        align-items: center;
+        font-size: 0.84rem;
+        color: var(--showcase-muted-strong);
+      }
+
+      .legend-bar {
+        width: 18px;
+        height: 14px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .panel-title {
+        font-size: 1.18rem;
+      }
+
+      .panel-value {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--showcase-text);
+      }
+
+      .panel-subvalue {
+        margin: 0.3rem 0 0;
+        font-size: 0.92rem;
+        color: var(--showcase-muted);
+      }
+
+      .value-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.7rem;
+      }
+
+      .value-chip {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0.35rem 0.65rem;
+        font-size: 0.78rem;
+        color: var(--showcase-muted-strong);
+      }
+
+      .response-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 1.15rem;
+      }
+
+      .response-card {
+        padding: 1.05rem 1.1rem 1rem;
+      }
+
+      .response-title {
+        font-size: 1.02rem;
+      }
+
+      .response-card p,
+      .method-card p,
+      .method-card li {
+        color: var(--showcase-muted-strong);
+      }
+
+      .method-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1.05rem;
+      }
+
+      .method-card {
+        min-height: 100%;
+      }
+
+      .method-card ul {
+        margin: 0.5rem 0 0;
+        padding-left: 1rem;
+      }
+
+      .leaflet-container {
+        font: inherit;
+      }
+
+      .leaflet-control-zoom {
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: var(--showcase-shadow) !important;
+      }
+
+      .leaflet-control-zoom a {
+        color: #1f2328 !important;
+      }
+
+      .leaflet-popup-content-wrapper,
+      .leaflet-popup-tip {
+        background: #20252b;
+        color: var(--showcase-text);
+      }
+
+      .map-tooltip {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        box-shadow: var(--showcase-shadow);
+        padding: 0.55rem 0.7rem;
+        color: var(--showcase-text);
+        background: #20252b;
+      }
+
+      .map-tooltip-title {
+        margin: 0 0 0.15rem;
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: var(--showcase-text);
+      }
+
+      .map-tooltip-text {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--showcase-muted);
+      }
+
+      .status-line {
+        margin-top: 0.75rem;
+        padding: 0.7rem 0.85rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--showcase-muted-strong);
+      }
+
+      .status-line strong {
+        color: var(--showcase-text);
+      }
+
+      .error-note {
+        margin-top: 0.75rem;
+        padding: 0.85rem 0.9rem;
+        border-radius: 12px;
+        background: rgba(176, 54, 41, 0.12);
+        border: 1px solid rgba(176, 54, 41, 0.28);
+        color: #f0c4bc;
+      }
+
+      @media (max-width: 1000px) {
+        .showcase-hero,
+        .map-grid,
+        .method-grid {
+          grid-template-columns: 1fr;
+        }
+
+        #voiceMap {
+          height: 540px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .response-grid,
+        .quick-stats {
+          grid-template-columns: 1fr;
+        }
+
+        .showcase-page {
+          padding-top: 2rem;
+        }
+
+        .showcase-card,
+        .showcase-note,
+        .map-card,
+        .panel-card,
+        .response-card,
+        .method-card {
+          padding: 1rem;
+        }
+
+        #voiceMap {
+          height: 480px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">
+          <a class="brand-name" href="index.html">Kabiri Bule</a>
+          <div class="brand-line">
+            Urban Governance · Migration · Institutions · Decision Intelligence
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="Primary navigation">
+          <a class="nav-link" href="showcase-voice-friction.html">Showcase</a>
+          <a class="nav-link" href="index.html#approach">Approach</a>
+          <a class="nav-link" href="index.html#writing">Writing</a>
+          <a class="nav-link" href="index.html#research">Research</a>
+          <a class="nav-link" href="index.html#publications">Publications</a>
+          <a class="nav-link" href="index.html#about">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="showcase-page">
+      <section class="section-anchor" id="top">
+        <div class="container">
+          <div class="showcase-hero">
+            <article class="showcase-card reveal">
+              <a class="showcase-breadcrumb" href="index.html">
+                <span aria-hidden="true">←</span>
+                <span>Back to the homepage showcase</span>
+              </a>
+
+              <p class="showcase-kicker">
+                Flagship showcase · live spatial prototype
+              </p>
+              <h1 class="showcase-title">
+                Beyond the Dashboard: Mapping Voice, Friction, and Public
+                Response
+              </h1>
+              <div class="accent-rule" aria-hidden="true"></div>
+
+              <p class="showcase-lead">
+                A resident-centred spatial intelligence prototype using GCRO
+                Quality of Life data to show how governance pressure takes
+                different forms across urban space.
+              </p>
+
+              <p class="showcase-body">
+                This is not built to rank wards. It is built to help distinguish
+                whether similar pressure patterns appear more channelled, more
+                blocked, more brittle, or more civically resilient once voice,
+                communication, efficacy, and public response are read together.
+              </p>
+
+              <p class="showcase-body">
+                Built in Gauteng, but designed around a problem cities
+                everywhere face: how to move from dashboard-style monitoring to
+                place-based response.
+              </p>
+
+              <div class="showcase-actions">
+                <a class="btn-primary" href="#interactive-map"
+                  >Go to the live map</a
+                >
+                <a class="btn-quiet" href="case-governance-pressure.html"
+                  >Read the predecessor case</a
+                >
+              </div>
+
+              <div
+                class="quick-stats"
+                id="quickStats"
+                aria-label="Quick summary statistics"
+              >
+                <div class="quick-stat">
+                  <span class="stat-value" id="statWards">529</span>
+                  <span class="stat-label"
+                    >Gauteng wards in the live spatial layer</span
+                  >
+                </div>
+                <div class="quick-stat">
+                  <span class="stat-value" id="statMunicipalities">–</span>
+                  <span class="stat-label"
+                    >Municipalities covered by the loaded data</span
+                  >
+                </div>
+                <div class="quick-stat">
+                  <span class="stat-value" id="statMode">Response type</span>
+                  <span class="stat-label"
+                    >Current interpretive mode shown on the map</span
+                  >
+                </div>
+              </div>
+            </article>
+
+            <aside
+              class="showcase-note reveal"
+              aria-label="Why this prototype matters"
+            >
+              <div class="showcase-note-block">
+                <h3>What this prototype is for</h3>
+                <p>
+                  To augment dashboard-style monitoring with a resident-facing
+                  spatial layer that helps leaders see not just where pressure
+                  exists, but what kind of response environment a place may
+                  represent.
+                </p>
+              </div>
+
+              <div class="showcase-note-block">
+                <h3>Core question</h3>
+                <p>
+                  Where is pressure channelled through voice, where is it
+                  blocked, and where does low mobilisation mask weak efficacy,
+                  poor communication, or latent institutional fragility?
+                </p>
+              </div>
+
+              <div class="showcase-note-block">
+                <h3>Current status</h3>
+                <p>
+                  Live ward geometry and signal layers are now wired in. The
+                  page is ready for public demonstration, with space for further
+                  refinement once the interpretation is stress-tested against
+                  substantive reading.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="section section-tight section-anchor"
+        id="interactive-map"
+      >
+        <div class="container">
+          <p class="section-kicker">Interactive map</p>
+          <h2 class="section-title">
+            Read the pattern, then read the type of place
+          </h2>
+          <p class="section-intro">
+            The default view shows response environment, not raw
+            dissatisfaction. Use the toggles to move between response type,
+            friction, voice, escalation, and quiet fragility, then click a ward
+            for a place-specific readout.
+          </p>
+
+          <div class="map-grid">
+            <article class="map-card reveal">
+              <div
+                class="map-toolbar"
+                role="tablist"
+                aria-label="Map mode selector"
+              >
+                <button
+                  class="map-pill is-active"
+                  type="button"
+                  data-mode="response_type"
+                >
+                  Response type
+                </button>
+                <button
+                  class="map-pill"
+                  type="button"
+                  data-mode="friction_index"
+                >
+                  Friction
+                </button>
+                <button class="map-pill" type="button" data-mode="voice_index">
+                  Voice
+                </button>
+                <button
+                  class="map-pill"
+                  type="button"
+                  data-mode="escalation_protest"
+                >
+                  Escalation
+                </button>
+                <button
+                  class="map-pill"
+                  type="button"
+                  data-mode="quiet_fragility_index"
+                >
+                  Quiet fragility
+                </button>
+              </div>
+
+              <div class="map-header">
+                <div>
+                  <h3 class="map-title" id="mapTitle">
+                    Response environment across Gauteng wards
+                  </h3>
+                  <div class="mini-label" id="mapSubtitle">
+                    Categorical read of how governance pressure appears to be
+                    processed across place.
+                  </div>
+                </div>
+                <div class="mini-label" id="mapDataNote">
+                  Weighted QoL 7 ward estimates
+                </div>
+              </div>
+
+              <div class="map-shell">
+                <div
+                  id="voiceMap"
+                  aria-label="Interactive Gauteng ward map"
+                ></div>
+              </div>
+
+              <div class="map-foot">
+                <div class="legend-box">
+                  <div class="mini-label">Legend</div>
+                  <div id="legendContent"></div>
+                  <p class="legend-subtext" id="legendSubtext"></p>
+                </div>
+
+                <div class="status-line" id="dataStatus">
+                  <strong>Status:</strong> waiting for local GeoJSON file to
+                  load.
+                </div>
+
+                <div class="error-note" id="mapError" hidden>
+                  The map data file could not be loaded. Save
+                  <strong>qol7_voice_friction_gauteng_wards_web.geojson</strong>
+                  in the same folder as this HTML page and reload.
+                </div>
+              </div>
+            </article>
+
+            <aside class="panel-card reveal" aria-live="polite">
+              <h3 class="panel-title">Ward readout</h3>
+
+              <div class="panel-block">
+                <div class="panel-label">Selected ward</div>
+                <p class="panel-value" id="wardName">Waiting for data</p>
+                <p class="panel-subvalue" id="wardMeta">
+                  Load the local GeoJSON file, then click a ward.
+                </p>
+              </div>
+
+              <div class="panel-block">
+                <div class="panel-label">Current mode</div>
+                <p class="panel-value" id="modeHeadline">Response type</p>
+                <p class="panel-subvalue" id="modeValue">
+                  A ward-specific interpretation will appear here.
+                </p>
+                <div class="value-chip-row" id="valueChips"></div>
+              </div>
+
+              <div class="panel-block">
+                <div class="panel-label">Observed pattern</div>
+                <p class="panel-text" id="observedPattern">
+                  This panel will translate the loaded ward data into a
+                  place-specific pattern rather than simply listing raw
+                  percentages.
+                </p>
+              </div>
+
+              <div class="panel-block">
+                <div class="panel-label">Interpretation</div>
+                <p class="panel-text" id="interpretationText">
+                  The aim is to distinguish whether pressure appears blocked,
+                  channelled, brittle, or relatively resilient once multiple
+                  signals are read together.
+                </p>
+              </div>
+
+              <div class="panel-block">
+                <div class="panel-label">Why this matters</div>
+                <p class="panel-text" id="whyItMatters">
+                  A dashboard may show that dissatisfaction exists. A spatial
+                  intelligence layer helps distinguish what sort of response
+                  environment a place may represent and therefore what sort of
+                  action may be more appropriate.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-tight">
+        <div class="container">
+          <p class="section-kicker">Response environments</p>
+          <h2 class="section-title">What the map is trying to distinguish</h2>
+          <p class="section-intro">
+            The point is not simply to identify where dissatisfaction is high.
+            It is to differentiate how governance pressure is being processed,
+            expressed, or muted across urban space.
+          </p>
+
+          <div class="response-grid">
+            <article class="response-card">
+              <p class="response-kicker">Type 1</p>
+              <h3 class="response-title">Blocked response zones</h3>
+              <p>
+                Pressure appears visible, but meetings, complaints, councillor
+                contact, or other formal response pathways appear thinner,
+                weaker, or less trusted. Dissatisfaction is present, yet channel
+                capacity looks constrained.
+              </p>
+            </article>
+
+            <article class="response-card">
+              <p class="response-kicker">Type 2</p>
+              <h3 class="response-title">Channelled pressure zones</h3>
+              <p>
+                Pressure is present, but public pathways still appear active.
+                These are places where residents seem to be voicing concerns
+                through institutional or semi-institutional channels rather than
+                withdrawing entirely.
+              </p>
+            </article>
+
+            <article class="response-card">
+              <p class="response-kicker">Type 3</p>
+              <h3 class="response-title">Brittle calm zones</h3>
+              <p>
+                Surface calm should be read carefully. Lower visible
+                mobilisation may coexist with weaker efficacy, limited
+                communication, or fragile civic confidence. Quiet is not always
+                stability.
+              </p>
+            </article>
+
+            <article class="response-card">
+              <p class="response-kicker">Type 4</p>
+              <h3 class="response-title">Resilient civic zones</h3>
+              <p>
+                These wards appear more stable or more effectively processed in
+                governance terms. That does not make them perfect, but it does
+                suggest less blockage and stronger response conditions relative
+                to elsewhere.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-tight">
+        <div class="container">
+          <p class="section-kicker">Method note</p>
+          <h2 class="section-title">
+            What this prototype is doing analytically
+          </h2>
+          <p class="section-intro">
+            This page is designed as a practical demonstration of interpretive
+            spatial reading. It is not pretending to be a final causal model,
+            because that would be a very different and much fussier beast.
+          </p>
+
+          <div class="method-grid">
+            <article class="method-card">
+              <p class="method-kicker">Data logic</p>
+              <h3 class="method-title">Resident-centred survey signals</h3>
+              <p class="method-text">
+                The page uses weighted ward-level descriptive estimates
+                constructed from the GCRO Quality of Life Survey. It is designed
+                to support structural reading of place variation, not to infer
+                individual motives from a single map.
+              </p>
+            </article>
+
+            <article class="method-card">
+              <p class="method-kicker">Interpretation logic</p>
+              <h3 class="method-title">
+                Pressure, channel, escalation, fragility
+              </h3>
+              <p class="method-text">
+                The live layer combines friction, voice, protest escalation, and
+                quiet fragility to distinguish response environments. These are
+                interpretive types intended to sharpen judgment, not perfect
+                truths waiting in the data like treasure in a cave.
+              </p>
+            </article>
+
+            <article class="method-card">
+              <p class="method-kicker">Why it adds something</p>
+              <h3 class="method-title">Beyond dashboard-style monitoring</h3>
+              <p class="method-text">
+                Dashboards are good at showing what is moving. A place-based
+                intelligence layer helps show where similar top-line pressure
+                may still imply different action needs because communication,
+                efficacy, channel strength, or civic confidence differ across
+                place.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      document
+        .querySelectorAll(".reveal")
+        .forEach((el) => el.classList.add("is-visible"));
+      const DATA_FILE = "qol7_voice_friction_gauteng_wards_web.geojson";
+
+      const RESPONSE_COLORS = {
+        "Blocked response zone": "#b85a47",
+        "Channelled pressure zone": "#db8f5c",
+        "Brittle calm zone": "#8e8576",
+        "Resilient civic zone": "#c7a84a",
+      };
+
+      const CONTINUOUS_PALETTES = {
+        friction_index: ["#fff7f3", "#fdd7c6", "#fba17e", "#ef6a4e", "#bf3b2e"],
+        voice_index: ["#f8f6eb", "#efe1a8", "#dfc869", "#b9992f", "#806c1d"],
+        escalation_protest: [
+          "#f7f4fb",
+          "#d9c9ef",
+          "#b69ad6",
+          "#8856b3",
+          "#5a2a7d",
+        ],
+        quiet_fragility_index: [
+          "#f7f5f0",
+          "#ddd6c7",
+          "#b9ac93",
+          "#8d7e65",
+          "#5e4f3c",
+        ],
+      };
+
+      const MODE_CONFIG = {
+        response_type: {
+          title: "Response environment across Gauteng wards",
+          subtitle:
+            "Categorical read of how governance pressure appears to be processed across place.",
+          display: "Response type",
+          type: "categorical",
+        },
+        friction_index: {
+          title: "Governance friction across Gauteng wards",
+          subtitle:
+            "Higher values indicate thicker layers of dissatisfaction, weak communication, integrity concern, and lower perceived influence.",
+          display: "Friction",
+          type: "continuous",
+        },
+        voice_index: {
+          title: "Formal voice capacity across Gauteng wards",
+          subtitle:
+            "Higher values indicate stronger use of meetings, petitions, complaints, or other formal public response pathways.",
+          display: "Voice",
+          type: "continuous",
+        },
+        escalation_protest: {
+          title: "Escalation signal across Gauteng wards",
+          subtitle:
+            "Higher values indicate more protest participation or stronger escalation signal relative to other wards.",
+          display: "Escalation",
+          type: "continuous",
+        },
+        quiet_fragility_index: {
+          title: "Quiet fragility across Gauteng wards",
+          subtitle:
+            "Higher values suggest places where low overt mobilisation may sit alongside weaker efficacy, communication, or civic confidence.",
+          display: "Quiet fragility",
+          type: "continuous",
+        },
+      };
+
+      const RESPONSE_EXPLANATIONS = {
+        "Blocked response zone": {
+          pattern:
+            "Higher governance friction, weaker perceived efficacy, and thinner formal response pathways than comparable wards.",
+          interpretation:
+            "A standard dashboard may register dissatisfaction here, but the deeper issue may be that pressure is not moving cleanly through trusted channels of recourse.",
+          why: "These are the places where leaders may need to repair channel credibility, local communication, or response visibility rather than simply reading low trust as a mood problem.",
+        },
+        "Channelled pressure zone": {
+          pattern:
+            "Pressure is present, yet meetings, complaints, councillor contact, petitions, or other civic routes still appear active.",
+          interpretation:
+            "This looks less like simple disengagement and more like a strained but still functioning response environment in which people are trying to use public channels.",
+          why: "Action here may be less about inventing participation from scratch and more about making existing pathways more responsive, timely, and legible.",
+        },
+        "Brittle calm zone": {
+          pattern:
+            "Overt mobilisation is softer, but efficacy, communication, or civic confidence remain weak enough that calm should be treated cautiously.",
+          interpretation:
+            "A quiet surface can hide underlying fragility. Low protest or lower complaint rates do not automatically imply institutional stability or public confidence.",
+          why: "These are the places where leaders can be misled by the absence of noise. The relevant task may be to strengthen everyday responsiveness before pressure hardens.",
+        },
+        "Resilient civic zone": {
+          pattern:
+            "Lower friction and/or more stable civic conditions than comparable wards, with less evidence of blockage or brittle quiet.",
+          interpretation:
+            "This does not mean a ward is perfect. It means the current signal mix looks more stable, more legible, or more resilient than elsewhere in the province.",
+          why: "These wards may be useful learning sites. The question is not only what is wrong elsewhere, but what institutional practices appear to be holding here.",
+        },
+      };
+
+      const map = L.map("voiceMap", {
+        zoomControl: true,
+        attributionControl: false,
+        preferCanvas: true,
+      }).setView([-26.2, 28.1], 8);
+
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+        {
+          subdomains: "abcd",
+          maxZoom: 18,
+          opacity: 0.45,
+        },
+      ).addTo(map);
+
+      let geoJsonLayer = null;
+      let featureData = [];
+      let selectedMode = "response_type";
+      let selectedLayer = null;
+      let currentBreaks = {};
+
+      const statusEl = document.getElementById("dataStatus");
+      const errorEl = document.getElementById("mapError");
+      const legendContentEl = document.getElementById("legendContent");
+      const legendSubtextEl = document.getElementById("legendSubtext");
+      const mapTitleEl = document.getElementById("mapTitle");
+      const mapSubtitleEl = document.getElementById("mapSubtitle");
+      const statMunicipalitiesEl =
+        document.getElementById("statMunicipalities");
+      const statModeEl = document.getElementById("statMode");
+
+      if (window.location.protocol === "file:") {
+        statusEl.innerHTML =
+          "<strong>Status:</strong> page content loaded, but the map data may be blocked when opened directly from file explorer. Use VS Code Live Server or run <code>python -m http.server</code> in this folder.";
+      }
+
+      function clamp01(value) {
+        if (value == null || Number.isNaN(value)) return null;
+        return Math.max(0, Math.min(1, Number(value)));
+      }
+
+      function withDerivedProperties(feature) {
+        const p = feature.properties;
+        const pieces = [
+          p.formal_voice_index,
+          p.meeting_voice_index,
+          p.action_voice_index,
+        ]
+          .map(clamp01)
+          .filter((v) => v != null);
+        p.voice_index = pieces.length
+          ? pieces.reduce((a, b) => a + b, 0) / pieces.length
+          : null;
+        p.friction_index = clamp01(p.friction_index);
+        p.escalation_protest = clamp01(p.escalation_protest);
+        p.quiet_fragility_index = clamp01(p.quiet_fragility_index);
+        p.civic_belonging = clamp01(p.civic_belonging);
+        return feature;
+      }
+
+      function computeQuantileBreaks(values, classes = 5) {
+        const clean = values
+          .filter((v) => v != null && Number.isFinite(v))
+          .sort((a, b) => a - b);
+        if (!clean.length) return [];
+        const breaks = [];
+        for (let i = 0; i < classes; i += 1) {
+          const idx = Math.min(
+            clean.length - 1,
+            Math.floor((i / classes) * clean.length),
+          );
+          breaks.push(clean[idx]);
+        }
+        breaks.push(clean[clean.length - 1]);
+        return breaks;
+      }
+
+      function getContinuousColor(mode, value) {
+        const palette = CONTINUOUS_PALETTES[mode];
+        const breaks = currentBreaks[mode] || [];
+        if (value == null || !palette || breaks.length < 2) return "#9b9489";
+        for (let i = 1; i < breaks.length; i += 1) {
+          if (value <= breaks[i])
+            return palette[Math.min(i - 1, palette.length - 1)];
+        }
+        return palette[palette.length - 1];
+      }
+
+      function getFillColor(properties, mode) {
+        if (mode === "response_type") {
+          return RESPONSE_COLORS[properties.response_type] || "#9b9489";
+        }
+        return getContinuousColor(mode, properties[mode]);
+      }
+
+      function styleFeature(feature) {
+        return {
+          weight: 0.8,
+          opacity: 1,
+          color: "rgba(255,255,255,0.85)",
+          fillOpacity: 0.88,
+          fillColor: getFillColor(feature.properties, selectedMode),
+        };
+      }
+
+      function highlightFeature(layer) {
+        layer.setStyle({
+          weight: 2.1,
+          color: "#1f2328",
+          fillOpacity: 0.95,
+        });
+        if (layer.bringToFront) layer.bringToFront();
+      }
+
+      function resetFeatureStyle(layer) {
+        if (!geoJsonLayer) return;
+        if (selectedLayer && layer === selectedLayer) {
+          highlightFeature(layer);
+          return;
+        }
+        geoJsonLayer.resetStyle(layer);
+      }
+
+      function formatPct(value) {
+        if (value == null || !Number.isFinite(value)) return "Not available";
+        return `${(value * 100).toFixed(1)}%`;
+      }
+
+      function modeSummary(feature, mode) {
+        const p = feature.properties;
+        if (mode === "response_type") {
+          return p.response_type || "Response type not available";
+        }
+        return formatPct(p[mode]);
+      }
+
+      function buildObservedPattern(p) {
+        const parts = [];
+        if (p.friction_index != null)
+          parts.push(`friction ${formatPct(p.friction_index)}`);
+        if (p.voice_index != null)
+          parts.push(`voice ${formatPct(p.voice_index)}`);
+        if (p.escalation_protest != null)
+          parts.push(`escalation ${formatPct(p.escalation_protest)}`);
+        if (p.quiet_fragility_index != null)
+          parts.push(`quiet fragility ${formatPct(p.quiet_fragility_index)}`);
+        return parts.length
+          ? `The ward currently reads as ${p.response_type.toLowerCase()} with ${parts.join(", ")}.`
+          : "The current pattern could not be computed from the loaded feature properties.";
+      }
+
+      function updatePanel(feature, layer) {
+        const p = feature.properties;
+        document.getElementById("wardName").textContent =
+          p.WardLabel || `Ward ${p.WardNo}`;
+        document.getElementById("wardMeta").textContent =
+          `${p.Municipali || "Municipality not available"} · Ward ${p.WardNo ?? "–"} · Raw n ${p.n_raw ?? "–"}`;
+        document.getElementById("modeHeadline").textContent =
+          MODE_CONFIG[selectedMode].display;
+        document.getElementById("modeValue").textContent = modeSummary(
+          feature,
+          selectedMode,
+        );
+        document.getElementById("observedPattern").textContent =
+          buildObservedPattern(p);
+
+        const explanation =
+          RESPONSE_EXPLANATIONS[p.response_type] ||
+          RESPONSE_EXPLANATIONS["Blocked response zone"];
+        document.getElementById("interpretationText").textContent =
+          explanation.interpretation;
+        document.getElementById("whyItMatters").textContent = explanation.why;
+
+        const chips = document.getElementById("valueChips");
+        chips.innerHTML = "";
+        [
+          ["Response type", p.response_type],
+          ["Friction", formatPct(p.friction_index)],
+          ["Voice", formatPct(p.voice_index)],
+          ["Escalation", formatPct(p.escalation_protest)],
+          ["Belonging", formatPct(p.civic_belonging)],
+        ].forEach(([label, value]) => {
+          const span = document.createElement("span");
+          span.className = "value-chip";
+          span.textContent = `${label}: ${value}`;
+          chips.appendChild(span);
+        });
+
+        if (selectedLayer && selectedLayer !== layer) {
+          geoJsonLayer.resetStyle(selectedLayer);
+        }
+        selectedLayer = layer;
+        highlightFeature(layer);
+      }
+
+      function tooltipHtml(feature) {
+        const p = feature.properties;
+        return `
+          <div class="map-tooltip-title">${p.WardLabel || `Ward ${p.WardNo}`}</div>
+          <p class="map-tooltip-text">${p.Municipali || ""}</p>
+          <p class="map-tooltip-text">${MODE_CONFIG[selectedMode].display}: ${modeSummary(feature, selectedMode)}</p>
+        `;
+      }
+
+      function updateLegend() {
+        const modeCfg = MODE_CONFIG[selectedMode];
+        mapTitleEl.textContent = modeCfg.title;
+        mapSubtitleEl.textContent = modeCfg.subtitle;
+        statModeEl.textContent = modeCfg.display;
+
+        if (selectedMode === "response_type") {
+          legendContentEl.innerHTML = `
+            <div class="legend-items">
+              ${Object.entries(RESPONSE_COLORS)
+                .map(
+                  ([label, color]) => `
+                  <div class="legend-item">
+                    <span class="legend-swatch" style="background:${color}"></span>
+                    <span>${label}</span>
+                  </div>
+                `,
+                )
+                .join("")}
+            </div>
+          `;
+          legendSubtextEl.textContent =
+            "These are interpretive response environments built from the ward-level signal mix rather than raw percentages alone.";
+        } else {
+          const breaks = currentBreaks[selectedMode] || [];
+          const palette = CONTINUOUS_PALETTES[selectedMode];
+          const rows = [];
+          for (let i = 1; i < breaks.length; i += 1) {
+            const from = breaks[i - 1];
+            const to = breaks[i];
+            rows.push(`
+              <div class="legend-scale-row">
+                <span class="legend-bar" style="background:${palette[Math.min(i - 1, palette.length - 1)]}"></span>
+                <span>${formatPct(from)} to ${formatPct(to)}</span>
+              </div>
+            `);
+          }
+          legendContentEl.innerHTML = `<div class="legend-scale">${rows.join("")}</div>`;
+          legendSubtextEl.textContent =
+            "Continuous modes use ward-level weighted estimates grouped into quantile bands for easier visual reading.";
+        }
+      }
+
+      function refreshMapStyles() {
+        if (!geoJsonLayer) return;
+        geoJsonLayer.eachLayer((layer) => {
+          layer.setStyle(styleFeature(layer.feature));
+          if (selectedLayer && layer === selectedLayer) highlightFeature(layer);
+        });
+        updateLegend();
+      }
+
+      function setMode(mode) {
+        selectedMode = mode;
+        document.querySelectorAll(".map-pill").forEach((btn) => {
+          btn.classList.toggle("is-active", btn.dataset.mode === mode);
+        });
+        refreshMapStyles();
+        if (selectedLayer) {
+          updatePanel(selectedLayer.feature, selectedLayer);
+        }
+      }
+
+      function chooseInitialFeature() {
+        const blocked = featureData.find(
+          (f) => f.properties.response_type === "Blocked response zone",
+        );
+        return blocked || featureData[0] || null;
+      }
+
+      function onEachFeature(feature, layer) {
+        layer.bindTooltip(tooltipHtml(feature), {
+          sticky: true,
+          direction: "auto",
+          className: "map-tooltip",
+        });
+
+        layer.on({
+          mouseover: () => {
+            if (!selectedLayer || layer !== selectedLayer)
+              highlightFeature(layer);
+          },
+          mouseout: () => resetFeatureStyle(layer),
+          click: () => {
+            map.fitBounds(layer.getBounds(), {
+              padding: [18, 18],
+              maxZoom: 11,
+            });
+            updatePanel(feature, layer);
+          },
+        });
+      }
+
+      async function loadMapData() {
+        try {
+          const response = await fetch(DATA_FILE);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const geojson = await response.json();
+          featureData = (geojson.features || []).map(withDerivedProperties);
+
+          currentBreaks = {
+            friction_index: computeQuantileBreaks(
+              featureData.map((f) => f.properties.friction_index),
+            ),
+            voice_index: computeQuantileBreaks(
+              featureData.map((f) => f.properties.voice_index),
+            ),
+            escalation_protest: computeQuantileBreaks(
+              featureData.map((f) => f.properties.escalation_protest),
+            ),
+            quiet_fragility_index: computeQuantileBreaks(
+              featureData.map((f) => f.properties.quiet_fragility_index),
+            ),
+          };
+
+          geoJsonLayer = L.geoJSON(featureData, {
+            style: styleFeature,
+            onEachFeature,
+          }).addTo(map);
+
+          map.fitBounds(geoJsonLayer.getBounds(), { padding: [18, 18] });
+
+          const municipalities = new Set(
+            featureData.map((f) => f.properties.Municipali).filter(Boolean),
+          );
+          statMunicipalitiesEl.textContent = municipalities.size;
+          statusEl.innerHTML =
+            "<strong>Status:</strong> live local GeoJSON loaded successfully.";
+          errorEl.hidden = true;
+          updateLegend();
+
+          const initial = chooseInitialFeature();
+          if (initial) {
+            geoJsonLayer.eachLayer((layer) => {
+              if (layer.feature === initial) {
+                updatePanel(initial, layer);
+              }
+            });
+          }
+        } catch (err) {
+          console.error(err);
+          errorEl.hidden = false;
+          statusEl.innerHTML =
+            window.location.protocol === "file:"
+              ? "<strong>Status:</strong> the page opened from a local file, so the browser likely blocked reading the GeoJSON. Start a local server in this folder and reload."
+              : "<strong>Status:</strong> map data file not found or could not be read.";
+        }
+      }
+
+      document.querySelectorAll(".map-pill").forEach((btn) => {
+        btn.addEventListener("click", () => setMode(btn.dataset.mode));
+      });
+
+      loadMapData();
+    </script>
+  </body>
+</html>
